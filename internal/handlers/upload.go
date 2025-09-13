@@ -3,8 +3,7 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"io"
-	"os"
+
 
 	"net/http"
 
@@ -14,7 +13,9 @@ import (
 )
 var s3Client *s3.Client
 func init(){
-	cfg, err := config.LoadDefaultConfig(context.TODO())
+	cfg, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithRegion("eu-north-1"),
+	)
 	if err != nil {
 		// log.Fatalf("Unable to load AWS config, %v", err)
 		fmt.Println("Unable to load AWS config, ", err)
@@ -35,9 +36,16 @@ func UploadFile(w http.ResponseWriter, r *http.Request) {
 	   return
    }
    defer file.Close()
+   _,err = s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
+	Bucket: aws.String("go-drive-v2"),
+	Key:    aws.String(header.Filename),
+	Body:   file,
+   })
+   if err != nil {
+	   http.Error(w, "couldnt upload file"+err.Error(), http.StatusInternalServerError)
+	   return
+   }
 
-   // Ensure uploads directory exists
-   
    fmt.Println("File uploaded successfully")
    w.Write([]byte("File uploaded successfully"))
 }
