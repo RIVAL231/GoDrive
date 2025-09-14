@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	// "github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/rival231/Go-Drive/internal/db"
 	"github.com/rival231/Go-Drive/internal/models"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -35,5 +37,35 @@ func CreateUser(w http.ResponseWriter, r *http.Request){
 	_,err = userCollection.InsertOne(ctx,bson.M{
 		"username":user.Username,
 		"password":user.Password,
+	})
+	if err != nil {
+		http.Error(w, "couldnt create user"+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte("user created successfully"))
+}
+var jwtKey = []byte("sankalp231")
+func UserLogin(w http.ResponseWriter, r *http.Request){
+	user, ok := r.Context().Value("user").(models.User)
+	if !ok {
+		http.Error(w, "user not found", http.StatusUnauthorized)
+		return
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256,jwt.MapClaims{
+		"username":user.Username,
+		"exp":time.Now().Add(24 * time.Hour).Unix(),
+	})
+	tokenString, err := token.SignedString(jwtKey)
+	 if err != nil {
+        http.Error(w, "Could not generate token", http.StatusInternalServerError)
+        return
+    }
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string] interface{}{
+		"message":"login successful",
+		"token":tokenString,
+		"user": user.Username,
 	})
 }

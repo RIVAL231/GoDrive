@@ -8,7 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
-var Client *mongo.Client
+var MongoClient *mongo.Client
 func ConnectDB(uri string){
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
     defer cancel()
@@ -22,12 +22,12 @@ func ConnectDB(uri string){
     }
 
 	log.Println("Connected to MongoDB")
-	Client = client
+	MongoClient = client
 
 } 
 func GetCollection(dbName,collName string) *mongo.Collection{
-	if Client == nil {
+	if MongoClient == nil {
 		log.Fatal("MongoDB not connected")
 	}
-	return Client.Database(dbName).Collection(collName)
+	return MongoClient.Database(dbName).Collection(collName)
 }
